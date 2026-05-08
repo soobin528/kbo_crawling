@@ -6,6 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import pandas as pd
 import os
+import time
 
 
 class GameCalCrawler:
@@ -31,6 +32,9 @@ class GameCalCrawler:
 
             select = Select(month_select)
             select.select_by_value(month)
+
+            # [추가] 월 드롭다운 변경 후 테이블 데이터가 바뀔 시간 확보
+            time.sleep(1)
 
             # 월 변경 후 테이블 다시 로딩 대기
             wait.until(EC.presence_of_element_located((By.CLASS_NAME, "tbl-type06")))
@@ -86,6 +90,13 @@ class GameCalCrawler:
 
             os.makedirs("./app/game_schedule", exist_ok=True)
 
+            # [추가] 월별 CSV 저장
+            df.to_csv(
+                f"./app/game_schedule/{month}m_schedule.csv",
+                index=False,
+                encoding="utf-8-sig",
+            )
+
             df.to_json(
                 f"./app/game_schedule/{month}m_schedule.json",
                 force_ascii=False,
@@ -104,4 +115,30 @@ class GameCalCrawler:
 
 if __name__ == "__main__":
     crawler = GameCalCrawler()
-    crawler.crawling("07")
+    all_df = []
+
+    # [수정] 07월 한 번만 실행하던 것을 01~12월 전체 반복
+    for month_num in range(1, 13):
+        month = f"{month_num:02d}"
+        df = crawler.crawling(month)
+        all_df.append(df)
+
+    # [추가] 12개월 데이터를 하나로 합치기
+    total_df = pd.concat(all_df, ignore_index=True)
+
+    # [추가] 2026 전체 파일로 저장
+    total_df.to_csv(
+        "./app/game_schedule/2026_kbo_schedule_all.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+
+    total_df.to_json(
+        "./app/game_schedule/2026_kbo_schedule_all.json",
+        force_ascii=False,
+        orient="records",
+        indent=4,
+    )
+
+    print("2026 전체 경기 일정/결과 저장 완료")
+    print("총 경기 수:", len(total_df))
