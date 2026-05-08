@@ -71,12 +71,6 @@ class GameCalCrawler:
                 stadium = values[6]
                 note = values[7] if len(values) > 7 else "-"
 
-                # 경기결과 제외
-                # 이미 끝난 경기는 game_center에 '리뷰'가 들어가고,
-                # 경기에는 '1 vs 5'처럼 점수가 들어감
-                if "리뷰" in game_center:
-                    continue
-
                 # 경기 일정만 저장
                 results.append(
                     {
